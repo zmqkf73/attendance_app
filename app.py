@@ -3,7 +3,7 @@ import tempfile
 import os
 import pandas as pd
 from datetime import datetime
-from attendance_generator import generate_attendance
+from attendance_generator import generate_attendance, format_text, capitalize_first_word_if_english, clean_name
 
 st.set_page_config(page_title="출석부 생성기", layout="centered")
 
@@ -19,16 +19,13 @@ with col1:
 with col2:
     selected_month = st.selectbox("월", options=["선택 안 함"] + list(range(1, 13)), index=0)
 
-# 실행 버튼
 if uploaded_file and st.button("출석부 생성"):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_input:
         tmp_input.write(uploaded_file.read())
         tmp_input_path = tmp_input.name
 
-    # 헤더는 실제로 7번째 행 (index=6)
     df = pd.read_excel(tmp_input_path, header=5)
 
-    # 열 이름 정의
     category_col = "구분"
     course_col = "과정"
     day_col = "요일"
@@ -37,25 +34,29 @@ if uploaded_file and st.button("출석부 생성"):
     material_col = "교재"
     student_end_col = "총인원"
 
-    # 학생 열 찾기
     df.columns = [str(c).strip() for c in df.columns]
     start_index = df.columns.get_loc(material_col) + 1
     end_index = df.columns.get_loc(student_end_col)
     student_cols = df.columns[start_index:end_index]
 
-    # '구분' 열 결측값 보정
     df[category_col] = df[category_col].fillna(method="ffill")
 
-    # records 구성
     records = []
     for _, row in df.iterrows():
-        students = row[student_cols].dropna().astype(str).tolist()
+        category = format_text(row.get(category_col))
+        course = format_text(row.get(course_col))
+        day = format_text(row.get(day_col))
+        time = format_text(row.get(time_col))
+        teacher = format_text(row.get(teacher_col))
+        teacher = capitalize_first_word_if_english(teacher)
+        students = row[student_cols].dropna().astype(str).apply(clean_name).tolist()
+
         records.append({
-            "구분": row.get(category_col),
-            "과정": row.get(course_col),
-            "요일": row.get(day_col),
-            "시간": row.get(time_col),
-            "강사": row.get(teacher_col),
+            "구분": category,
+            "과정": course,
+            "요일": day,
+            "시간": time,
+            "강사": teacher,
             "학생목록": sorted(set(students))
         })
 
