@@ -157,7 +157,7 @@ def generate_attendance(records, template_path, year=None, month=None):
             else:
                 block_idx += 1
 
-    if "ABC" in wb.sheetnames:
+    if "ABC" in wb.sheetnames and len(wb.sheetnames) > 1:
         del wb["ABC"]
 
     output_stream = BytesIO()
