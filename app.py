@@ -43,7 +43,8 @@ if uploaded_file:
 
     df[teacher_col] = df[teacher_col].fillna("").astype(str).map(str.strip)
     all_teachers = sorted(set(
-        t for t in df[teacher_col].unique()
+        capitalize_first_word_if_english(format_text(t))
+        for t in df[teacher_col].unique()
         if t and t.lower() != "nan" and t != "강사"
     ))
 
@@ -60,10 +61,10 @@ if uploaded_file:
 
         records = []
         for _, row in df.iterrows():
-            teacher = format_text(row.get(teacher_col))
-            teacher_std = capitalize_first_word_if_english(teacher)
+            teacher_raw = row.get(teacher_col)
+            teacher = capitalize_first_word_if_english(format_text(teacher_raw))
 
-            if target_set is None or teacher_std in target_set:
+            if target_set is None or teacher in target_set:
                 category = format_text(row.get(category_col))
                 course = format_text(row.get(course_col))
                 day = format_text(row.get(day_col))
@@ -75,7 +76,7 @@ if uploaded_file:
                     "과정": course,
                     "요일": day,
                     "시간": time,
-                    "강사": teacher_std,
+                    "강사": teacher,
                     "학생목록": sorted(set(students))
                 })
 
