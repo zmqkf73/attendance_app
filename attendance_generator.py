@@ -1,35 +1,50 @@
-# attendance_generator.py
-
 import re
 from io import BytesIO
 from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.styles import Font
-from openpyxl.cell.cell import Cell
+
 
 def convert_non_string_to_string(x):
     return str(x) if not isinstance(x, str) else x
 
+
 def remove_newlines(text):
     return text.replace("\n", " ")
+
 
 def strip_edges(text):
     return text.strip()
 
+
 def reduce_whitespace(text):
     return re.sub(r"\s+", " ", text)
+
 
 def remove_all_whitespace(text):
     return re.sub(r"\s+", "", text)
 
+
 def insert_space_before_brackets(text):
-    return re.sub(r"([\w\uac00-\ud7a3])(?=[\(\[\{])", r"\1 ", text)
+    return re.sub(r"([\w가-힣])(?=[\(\[\{])", r"\1 ", text)
+
 
 def replace_tilde_with_dash(text):
     return text.replace("~", "-")
 
+
 def insert_space_between_adjacent_brackets(text):
     return re.sub(r"(\))(?=\()", r"\1 ", text)
+
+
+def capitalize_first_word_if_english(text):
+    match = re.match(r"^([A-Za-z]+)(\s|$)", text)
+    if match:
+        first = match.group(1)
+        rest = text[len(first):]
+        return first.capitalize() + rest
+    return text
+
 
 def format_text(text):
     text = convert_non_string_to_string(text)
@@ -41,6 +56,7 @@ def format_text(text):
     text = strip_edges(text)
     return text
 
+
 def clean_name(name):
     name = convert_non_string_to_string(name)
     name = remove_newlines(name)
@@ -48,13 +64,6 @@ def clean_name(name):
     name = remove_all_whitespace(name)
     return name
 
-def capitalize_first_word_if_english(text):
-    match = re.match(r"^([A-Za-z]+)(\s|$)", text)
-    if match:
-        first = match.group(1)
-        rest = text[len(first):]
-        return first.capitalize() + rest
-    return text
 
 def generate_attendance(records, template_path, year=None, month=None):
     TEMPLATE_ROWS = 31

@@ -24,8 +24,38 @@ if uploaded_file:
         tmp_input.write(uploaded_file.read())
         tmp_input_path = tmp_input.name
 
-    df = pd.read_excel(tmp_input_path)
-    records = df.to_dict(orient="records")
+    # 헤더는 6번째 행 (index=5)
+    df = pd.read_excel(tmp_input_path, header=5)
+
+    # 열 이름 정의
+    category_col = "구분"
+    course_col = "과정"
+    day_col = "요일"
+    time_col = "시간"
+    teacher_col = "강사"
+    material_col = "교재"
+    student_end_col = "총인원"
+
+    # 학생 열 찾기
+    start_index = df.columns.get_loc(material_col) + 1
+    end_index = df.columns.get_loc(student_end_col)
+    student_cols = df.columns[start_index:end_index]
+
+    # '구분' 열 결측값 보정
+    df[category_col] = df[category_col].fillna(method="ffill")
+
+    # records 구성
+    records = []
+    for _, row in df.iterrows():
+        students = row[student_cols].dropna().astype(str).tolist()
+        records.append({
+            "구분": row.get(category_col),
+            "과정": row.get(course_col),
+            "요일": row.get(day_col),
+            "시간": row.get(time_col),
+            "강사": row.get(teacher_col),
+            "학생목록": sorted(set(students))
+        })
 
     template_path = os.path.join(os.path.dirname(__file__), "template.xlsx")
 
@@ -37,4 +67,9 @@ if uploaded_file:
 
     filename = f"{y or datetime.today().year}년_{m or datetime.today().month:02d}월_출석부.xlsx"
     st.success("출석부 생성이 완료되었습니다.")
-    st.download_button("출석부 다운로드", data=output_stream.getvalue(), file_name=filename, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    st.download_button(
+        "출석부 다운로드",
+        data=output_stream.getvalue(),
+        file_name=filename,
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
