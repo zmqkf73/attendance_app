@@ -8,7 +8,7 @@ from attendance_generator import generate_attendance
 st.set_page_config(page_title="출석부 생성기", layout="centered")
 
 st.title("출석부 자동 생성기")
-st.markdown("업무용 시간표 엑셀 파일을 업로드하면 출석부를 자동 생성합니다.")
+st.markdown("업무용 시간표 엑셀 파일을 업로드하고 '출석부 생성' 버튼을 누르세요.")
 st.markdown("출석부 양식 템플릿은 내부에 포함된 `template.xlsx` 파일을 사용합니다.")
 
 uploaded_file = st.file_uploader("시간표 엑셀 파일 업로드", type=["xlsx"])
@@ -19,13 +19,14 @@ with col1:
 with col2:
     selected_month = st.selectbox("월", options=["선택 안 함"] + list(range(1, 13)), index=0)
 
-if uploaded_file:
+# 실행 버튼
+if uploaded_file and st.button("출석부 생성"):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_input:
         tmp_input.write(uploaded_file.read())
         tmp_input_path = tmp_input.name
 
-    # 헤더는 6번째 행 (index=5)
-    df = pd.read_excel(tmp_input_path, header=5)
+    # 헤더는 실제로 7번째 행 (index=6)
+    df = pd.read_excel(tmp_input_path, header=6)
 
     # 열 이름 정의
     category_col = "구분"
