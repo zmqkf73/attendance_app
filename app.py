@@ -48,16 +48,14 @@ if uploaded_file:
         if t and t.lower() != "nan" and t != "강사"
     ))
 
-    selected_teachers = st.multiselect("출석부를 생성할 강사를 선택하세요 (선택하지 않으면 전체 대상)", all_teachers)
+    selected_teachers = st.multiselect("출석부를 생성할 강사를 선택하세요 (선택 없으면 전체 생성)", all_teachers)
 
-    col1, col2 = st.columns(2)
-    generate_all = col1.button("전체 생성")
-    generate_selected = col2.button("선택 강사만 생성")
+    generate = st.button("출석부 생성")
 
-    if generate_all or (generate_selected and selected_teachers):
+    if generate:
         y = int(selected_year) if selected_year != "선택 안 함" else None
         m = int(selected_month) if selected_month != "선택 안 함" else None
-        target_set = None if generate_all else set(selected_teachers)
+        target_set = None if not selected_teachers else set(selected_teachers)
 
         records = []
         for _, row in df.iterrows():
