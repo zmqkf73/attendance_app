@@ -19,13 +19,8 @@ with col1:
 with col2:
     selected_month = st.selectbox("월", options=["선택 안 함"] + list(range(1, 13)), index=0)
 
-# 버튼 가운데 정렬
-btn_col1, btn_col2, btn_col3 = st.columns([1, 1, 1])
-generate_clicked = False
-with btn_col2:
-    generate_clicked = st.button("출석부 생성")
-
-if uploaded_file and generate_clicked:
+# 실행 버튼
+if uploaded_file and st.button("출석부 생성"):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_input:
         tmp_input.write(uploaded_file.read())
         tmp_input_path = tmp_input.name
@@ -43,6 +38,7 @@ if uploaded_file and generate_clicked:
     student_end_col = "총인원"
 
     # 학생 열 찾기
+    df.columns = [str(c).strip() for c in df.columns]
     start_index = df.columns.get_loc(material_col) + 1
     end_index = df.columns.get_loc(student_end_col)
     student_cols = df.columns[start_index:end_index]
