@@ -37,10 +37,3 @@ streamlit run app.py
 ## Output
 - Attendance files are generated per instructor
 - Users can download the final compiled `.xlsx` file via the app interface
-
-## Notes
-- Temporary Excel files (e.g., `~$template.xlsx`) are ignored via `.gitignore`
-- Only weekdays (Mon–Fri) or Saturdays are populated depending on selection
-
----
-For internal use only. Make sure to keep any uploaded schedule files secure.
