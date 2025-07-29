@@ -69,11 +69,10 @@ def generate_attendance(records, template_path, year=None, month=None, day_type=
     days_kor = ["월", "화", "수", "목", "금", "토", "일"]
     _, last_day = calendar.monthrange(used_year, used_month)
 
-    # 날짜-요일 필터링
     valid_dates = []
     for day in range(1, last_day + 1):
         date = datetime(used_year, used_month, day)
-        weekday = date.weekday()  # 0=월, ..., 6=일
+        weekday = date.weekday() 
         if (day_type == "주중" and weekday < 5) or (day_type == "토요일" and weekday == 5):
             valid_dates.append((days_kor[weekday], day))
 
@@ -114,8 +113,8 @@ def generate_attendance(records, template_path, year=None, month=None, day_type=
             date_cell = ws.cell(row=start_row + 5, column=col_idx)
 
             if i < len(valid_dates):
-                weekday_cell.value = valid_dates[i][0]  # 요일
-                date_cell.value = valid_dates[i][1]      # 일자
+                weekday_cell.value = valid_dates[i][0] 
+                date_cell.value = valid_dates[i][1]    
             else:
                 weekday_cell.value = None
                 date_cell.value = None

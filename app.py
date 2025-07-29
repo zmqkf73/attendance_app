@@ -19,7 +19,6 @@ with col1:
 with col2:
     selected_month = st.selectbox("월", options=["선택 안 함"] + list(range(1, 13)), index=0)
 
-# 요일 유형 선택 추가
 selected_day_type = st.radio("출석 요일 유형 선택", options=["주중", "토요일"], index=0)
 
 if uploaded_file:
