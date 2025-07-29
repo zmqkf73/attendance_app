@@ -1,5 +1,7 @@
 # Attendance App
 
+**Live App**: [https://attendanceapp-kgm2r8ahpkesw4wpmrxxsq.streamlit.app/](https://attendanceapp-kgm2r8ahpkesw4wpmrxxsq.streamlit.app/)
+
 This is a Streamlit-based attendance sheet generator for internal use.
 
 ## Features
