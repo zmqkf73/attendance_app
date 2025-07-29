@@ -19,6 +19,9 @@ with col1:
 with col2:
     selected_month = st.selectbox("월", options=["선택 안 함"] + list(range(1, 13)), index=0)
 
+# 요일 유형 선택 추가
+selected_day_type = st.radio("출석 요일 유형 선택", options=["주중", "토요일"], index=0)
+
 if uploaded_file:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_input:
         tmp_input.write(uploaded_file.read())
@@ -81,7 +84,7 @@ if uploaded_file:
         template_path = os.path.join(os.path.dirname(__file__), "template.xlsx")
 
         with st.spinner("출석부 생성 중..."):
-            output_stream = generate_attendance(records, template_path, year=y, month=m)
+            output_stream = generate_attendance(records, template_path, year=y, month=m, day_type=selected_day_type)
 
         filename = f"{y or datetime.today().year}년_{m or datetime.today().month:02d}월_출석부.xlsx"
         st.success("출석부 생성이 완료되었습니다.")

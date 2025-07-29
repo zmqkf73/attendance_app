@@ -1,41 +1,33 @@
 import re
+import calendar
 from io import BytesIO
 from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
-
 def convert_non_string_to_string(x):
     return str(x) if not isinstance(x, str) else x
-
 
 def remove_newlines(text):
     return text.replace("\n", " ")
 
-
 def strip_edges(text):
     return text.strip()
-
 
 def reduce_whitespace(text):
     return re.sub(r"\s+", " ", text)
 
-
 def remove_all_whitespace(text):
     return re.sub(r"\s+", "", text)
-
 
 def insert_space_before_brackets(text):
     return re.sub(r"([\w가-힣])(?=[\(\[\{])", r"\1 ", text)
 
-
 def replace_tilde_with_dash(text):
     return text.replace("~", "-")
 
-
 def insert_space_between_adjacent_brackets(text):
     return re.sub(r"(\))(?=\()", r"\1 ", text)
-
 
 def capitalize_first_word_if_english(text):
     match = re.match(r"^([A-Za-z]+)(\s|$)", text)
@@ -44,7 +36,6 @@ def capitalize_first_word_if_english(text):
         rest = text[len(first):]
         return first.capitalize() + rest
     return text
-
 
 def format_text(text):
     text = convert_non_string_to_string(text)
@@ -56,7 +47,6 @@ def format_text(text):
     text = strip_edges(text)
     return text
 
-
 def clean_name(name):
     name = convert_non_string_to_string(name)
     name = remove_newlines(name)
@@ -64,14 +54,28 @@ def clean_name(name):
     name = remove_all_whitespace(name)
     return name
 
-
-def generate_attendance(records, template_path, year=None, month=None):
+def generate_attendance(records, template_path, year=None, month=None, day_type="주중"):
     TEMPLATE_ROWS = 31
-    TEMPLATE_COLS = 29
+    TEMPLATE_COLS = 32
     used_block_count = {}
 
     wb = load_workbook(template_path)
     template_ws = wb["ABC"]
+
+    today = datetime.today()
+    used_year = year or today.year
+    used_month = month or today.month
+
+    days_kor = ["월", "화", "수", "목", "금", "토", "일"]
+    _, last_day = calendar.monthrange(used_year, used_month)
+
+    # 날짜-요일 필터링
+    valid_dates = []
+    for day in range(1, last_day + 1):
+        date = datetime(used_year, used_month, day)
+        weekday = date.weekday()  # 0=월, ..., 6=일
+        if (day_type == "주중" and weekday < 5) or (day_type == "토요일" and weekday == 5):
+            valid_dates.append((days_kor[weekday], day))
 
     for record in records:
         teacher = record["강사"]
@@ -96,13 +100,25 @@ def generate_attendance(records, template_path, year=None, month=None):
         start_row = block_index * TEMPLATE_ROWS + 1
         used_block_count[teacher] = block_index + 1
 
-        today = datetime.today()
-        year_str = str(year)[2:] if year is not None else today.strftime("%y")
-        month_str = str(month) if month is not None else str(today.month)
+        year_str = str(used_year)[2:]
+        month_str = str(used_month)
         formatted_date = f"{year_str}년 {month_str}월"
 
         ws.cell(row=start_row + 2, column=2).value = formatted_date
         ws.cell(row=start_row + 2, column=7).value = f"{day} {time}"
+
+        # 날짜/요일 입력 (G열~AC열 = 열 7~29)
+        for i in range(23):
+            col_idx = 7 + i
+            weekday_cell = ws.cell(row=start_row + 4, column=col_idx)
+            date_cell = ws.cell(row=start_row + 5, column=col_idx)
+
+            if i < len(valid_dates):
+                weekday_cell.value = valid_dates[i][0]  # 요일
+                date_cell.value = valid_dates[i][1]      # 일자
+            else:
+                weekday_cell.value = None
+                date_cell.value = None
 
         for row in ws.iter_rows(min_row=start_row, max_row=start_row + TEMPLATE_ROWS - 1, max_col=TEMPLATE_COLS):
             for cell in row:
