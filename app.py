@@ -128,6 +128,7 @@ if uploaded_file:
                     continue
 
                 row_num = row_idx + 6
+                st.write(f"row_idx: {row_idx}")
                 col_num = df.columns.get_loc(col) + 1
                 col_letter = get_column_letter(col_num)
                 cell_coord = f"{col_letter}{row_num}"
