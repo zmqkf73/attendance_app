@@ -2,7 +2,7 @@ import streamlit as st
 import tempfile
 import os
 import pandas as pd
-from datetime import datetime, date
+from datetime import datetime
 from calendar import monthrange
 from attendance_generator import (
     generate_attendance,
@@ -27,7 +27,6 @@ with col2:
 
 selected_day_type = st.radio("출석 요일 유형 선택", options=["주중", "토요일"], index=0)
 
-# 사용자 지정 공휴일 및 포함일 입력
 with st.expander("사용자 지정 날짜 설정"):
     st.markdown("- 아래에서 해당 월의 일(day)을 선택하세요.")
 
@@ -107,15 +106,14 @@ if uploaded_file:
                 day = format_text(row.get(day_col))
                 time = format_text(row.get(time_col))
 
-                students = (
-                    row[student_cols]
-                    .dropna()
-                    .astype(str)
-                    .map(format_text)
-                    .map(clean_name)
-                    .map(str.strip)
-                )
-                students = [s for s in students if s]
+                students = []
+                for col in student_cols:
+                    name_raw = row[col]
+                    if pd.isna(name_raw):
+                        continue
+                    name = clean_name(format_text(str(name_raw).strip()))
+                    if name:
+                        students.append({"name": name})
 
                 records.append({
                     "구분": category,
@@ -123,7 +121,7 @@ if uploaded_file:
                     "요일": day,
                     "시간": time,
                     "강사": teacher,
-                    "학생목록": sorted(set(students))
+                    "학생목록": students
                 })
 
         template_path = os.path.join(os.path.dirname(__file__), "template.xlsx")

@@ -6,7 +6,6 @@ from datetime import datetime, date
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
-
 def extract_duration_from_comment(cell):
     if cell.comment is None:
         return None
@@ -138,7 +137,6 @@ def generate_attendance(
         ws.cell(row=start_row + 2, column=2).value = formatted_date
         ws.cell(row=start_row + 2, column=7).value = f"{day} {time}"
 
-        # 날짜/요일 입력 (G열~AC열 = 열 7~29)
         for i in range(23):
             col_idx = 7 + i
             weekday_cell = ws.cell(row=start_row + 4, column=col_idx)
@@ -173,14 +171,14 @@ def generate_attendance(
 
         if korean_col:
             duration_col = korean_col + 3
-            for i, name in enumerate(students):
+            for i, student in enumerate(students):
                 row_idx = student_start_row + i
                 name_cell = ws.cell(row=row_idx, column=korean_col)
-                name_cell.value = clean_name(str(name).strip())
+                name_cell.value = student["name"]
 
-                # 메모에서 수강기간 추출
-                if name_cell.comment and name_cell.comment.text:
-                    lines = name_cell.comment.text.strip().splitlines()
+                comment_text = name_cell.comment.text if name_cell.comment else ""
+                if comment_text:
+                    lines = comment_text.strip().splitlines()
                     for line in reversed(lines):
                         if any(token in line for token in ["/", "-", "개월"]):
                             ws.cell(row=row_idx, column=duration_col).value = line.strip()
