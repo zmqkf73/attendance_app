@@ -9,8 +9,7 @@ from pathlib import Path
 
 def read_excel_comments(file_path):
     wb = load_workbook(file_path)
-    sheetname = "ABC" if "ABC" in wb.sheetnames else wb.sheetnames[0]
-    ws = wb[sheetname]
+    ws = wb.worksheets[0]  # 첫 번째 시트 사용
 
     comments = {}
     for row in ws.iter_rows():
