@@ -83,9 +83,12 @@ def generate_attendance(
     if isinstance(template_path, str):
         wb = load_workbook(template_path, data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
     elif hasattr(template_path, 'read'):
+        template_path.seek(0)
         wb = load_workbook(template_path, data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
+    elif hasattr(template_path, 'name'):
+        wb = load_workbook(template_path.name, data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
     else:
-        raise TypeError("template_path must be a file path or a file-like object")
+        raise TypeError(f"Invalid template_path: expected str, file-like object, or named temp file, got {type(template_path)}")
 
     template_ws = wb["ABC"]
 
