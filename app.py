@@ -120,7 +120,7 @@ if uploaded_file:
                 row_num = row_idx + 6  # 실제 엑셀 행 번호
                 col_num = df.columns.get_loc(col) + 1  # 실제 엑셀 열 번호 (1-based)
                 cell_coord = f"{get_column_letter(col_num)}{row_num}"
-                st.write(f"{cell_coord} → {name} → duration: {duration}")
+                st.write(f"{cell_coord} → {name}")
                 if not name:
                     continue
 
