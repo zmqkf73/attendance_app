@@ -5,6 +5,7 @@ from io import BytesIO
 from datetime import datetime, date
 from openpyxl import load_workbook
 from openpyxl.styles import Font
+from pathlib import Path
 
 def extract_duration_from_comment(cell):
     if cell.comment is None:
@@ -80,15 +81,15 @@ def generate_attendance(
     TEMPLATE_COLS = 32
     used_block_count = {}
 
-    if isinstance(template_path, str):
-        wb = load_workbook(template_path, data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
-    elif hasattr(template_path, 'read'):
+    if isinstance(template_path, (str, Path)):
+        wb = load_workbook(str(template_path), data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
+    elif hasattr(template_path, "read"):
         template_path.seek(0)
         wb = load_workbook(template_path, data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
-    elif hasattr(template_path, 'name'):
+    elif hasattr(template_path, "name") and isinstance(template_path.name, str):
         wb = load_workbook(template_path.name, data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
     else:
-        raise TypeError(f"Invalid template_path: expected str, file-like object, or named temp file, got {type(template_path)}")
+        raise TypeError(f"Invalid template_path: got {type(template_path)}")
 
     template_ws = wb["ABC"]
 
