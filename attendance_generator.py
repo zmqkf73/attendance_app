@@ -9,7 +9,7 @@ from pathlib import Path
 
 def read_excel_comments(file_path):
     wb = load_workbook(file_path)
-    ws = wb.worksheets[0]  # 첫 번째 시트 사용
+    ws = wb.worksheets[0]  # 첫 번째 시트 사용 (이름 무관)
 
     comments = {}
     for row in ws.iter_rows():
@@ -96,7 +96,7 @@ def generate_attendance(
 
     comments_map = read_excel_comments(str(template_path))
 
-    template_ws = wb["ABC"]
+    ws = wb.worksheets[0]
 
     today = datetime.today()
     used_year = year or today.year
