@@ -75,7 +75,6 @@ if uploaded_file:
     student_end_col = "총인원"
 
     df[category_col] = df[category_col].fillna(method="ffill")
-    st.write("df.columns:", list(df.columns))
 
     start_index = df.columns.get_loc(material_col) + 1
     end_index = df.columns.get_loc(student_end_col)
@@ -131,11 +130,10 @@ if uploaded_file:
         if not Path(template_path).exists():
             raise FileNotFoundError(f"template.xlsx not found at {template_path}")
 
-        with st.spinner("출석부 생성 중..."):
+        st.write("template_path:", template_path)
+        st.write("File exists:", os.path.exists(template_path))
 
-            st.write("template_path:", template_path)
-            st.write("File exists:", os.path.exists(template_path))
-            
+        with st.spinner("출석부 생성 중..."):
             output_stream = generate_attendance(
                 records,
                 template_path=template_path,
