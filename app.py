@@ -12,9 +12,6 @@ from attendance_generator import (
     clean_name,
 )
 
-import openpyxl
-st.write("openpyxl version:", openpyxl.__version__)
-
 st.set_page_config(page_title="출석부 생성기", layout="centered")
 
 st.title("출석부 자동 생성기")
@@ -133,6 +130,9 @@ if uploaded_file:
         template_path = os.path.join(base_dir, "template.xlsx")
         if not Path(template_path).exists():
             raise FileNotFoundError(f"template.xlsx not found at {template_path}")
+        
+        st.write("template_path:", template_path)
+        st.write("File exists:", os.path.exists(template_path))
 
         with st.spinner("출석부 생성 중..."):
             output_stream = generate_attendance(
