@@ -129,10 +129,16 @@ if uploaded_file:
                 row_num = row_idx + 6  # header=5 기준
                 col_num = df.columns.get_loc(col) + 1
                 comment_text = comment_map.get((row_num, col_num))
-                st.write(f"@@@@@ comment_text: {comment_text}")
-                duration = extract_duration(comment_text)
+
+                duration = None
+                if comment_text:
+                    for line in reversed(comment_text.strip().splitlines()):
+                        if any(t in line for t in ['/', '-', '개월']):
+                            duration = line.strip()
+                            break
 
                 students.append({"name": name, "duration": duration})
+                st.write(f"{name} → duration: {duration}")
 
             records.append({
                 "구분": category,
@@ -147,17 +153,6 @@ if uploaded_file:
         template_path = os.path.join(base_dir, "template.xlsx")
         if not Path(template_path).exists():
             raise FileNotFoundError(f"template.xlsx not found at {template_path}")
-
-        # 수강기간 출력
-        st.subheader("수강기간 확인")
-        for record in records:
-            for student in record["학생목록"]:
-                name = student.get("name", "")
-                duration = student.get("duration", "")
-                if duration:
-                    st.write(f"{name} - 수강기간: {duration}")
-                else:
-                    st.write(f"{name} - 수강기간: 없음")
 
         with st.spinner("출석부 생성 중..."):
             output_stream = generate_attendance(
