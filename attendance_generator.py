@@ -80,7 +80,7 @@ def generate_attendance(
     TEMPLATE_COLS = 32
     used_block_count = {}
 
-    wb = load_workbook(template_path if isinstance(template_path, str) else template_path.name)
+    wb = load_workbook(template_path if isinstance(template_path, str) else template_path.name, data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
     template_ws = wb["ABC"]
 
     today = datetime.today()
@@ -170,19 +170,25 @@ def generate_attendance(
                 break
 
         if korean_col:
-            duration_col = korean_col + 3
+            duration_col = None
+            for row in ws.iter_rows(min_row=start_row, max_row=start_row + 10, max_col=TEMPLATE_COLS):
+                for cell in row:
+                    if isinstance(cell.value, str) and cell.value.strip() == "수강기간":
+                        duration_col = cell.column
+                        break
+                if duration_col:
+                    break
             for i, student_dict in enumerate(students):
                 name = student_dict.get("name")
+                if not name:
+                    continue
                 row_idx = student_start_row + i
                 cell = ws.cell(row=row_idx, column=korean_col)
                 cell.value = name
 
-                if cell.comment and cell.comment.text:
-                    lines = cell.comment.text.strip().splitlines()
-                    for line in reversed(lines):
-                        if any(token in line for token in ["/", "-", "개월"]):
-                            ws.cell(row=row_idx, column=duration_col).value = line.strip()
-                            break
+                duration = extract_duration_from_comment(cell)
+                if duration:
+                    ws.cell(row=row_idx, column=duration_col).value = duration
 
     for sheetname in wb.sheetnames:
         ws = wb[sheetname]
