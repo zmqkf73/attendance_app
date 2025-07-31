@@ -1,5 +1,6 @@
 import re
 import calendar
+import holidays
 from io import BytesIO
 from datetime import datetime
 from openpyxl import load_workbook
@@ -69,12 +70,15 @@ def generate_attendance(records, template_path, year=None, month=None, day_type=
     days_kor = ["월", "화", "수", "목", "금", "토", "일"]
     _, last_day = calendar.monthrange(used_year, used_month)
 
+    kr_holidays = holidays.KR(years=used_year)
+
     valid_dates = []
     for day in range(1, last_day + 1):
         date = datetime(used_year, used_month, day)
-        weekday = date.weekday() 
-        if (day_type == "주중" and weekday < 5) or (day_type == "토요일" and weekday == 5):
-            valid_dates.append((days_kor[weekday], day))
+        weekday = date.weekday()
+        if ((day_type == "주중" and weekday < 5) or (day_type == "토요일" and weekday == 5)):
+            if date.date() not in kr_holidays:  # 공휴일이면 제외
+                valid_dates.append((days_kor[weekday], day))
 
     for record in records:
         teacher = record["강사"]
