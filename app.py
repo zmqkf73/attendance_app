@@ -6,13 +6,13 @@ from datetime import datetime
 from calendar import monthrange
 from pathlib import Path
 from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 from attendance_generator import (
     generate_attendance,
     format_text,
     capitalize_first_word_if_english,
     clean_name,
 )
-from openpyxl.utils import get_column_letter
 
 def extract_duration(text):
     if not text:
@@ -98,6 +98,7 @@ if uploaded_file:
         target_set = None if not selected_teachers else set(selected_teachers)
 
         records = []
+        comment_dict = {}
 
         for row_idx, row in df.iterrows():
             teacher_raw = row.get(teacher_col)
@@ -111,28 +112,26 @@ if uploaded_file:
             time = format_text(row.get(time_col))
 
             students = []
-            for i, col in enumerate(student_cols):
+            for col in student_cols:
                 name_raw = row[col]
                 if pd.isna(name_raw):
                     continue
                 name = clean_name(format_text(str(name_raw).strip()))
-                from openpyxl.utils import get_column_letter
-                row_num = row_idx + 6  # 실제 엑셀 행 번호
-                col_num = df.columns.get_loc(col) + 1  # 실제 엑셀 열 번호 (1-based)
-                cell_coord = f"{get_column_letter(col_num)}{row_num}"
-                st.write(f"{cell_coord} → {name}")
                 if not name:
                     continue
 
-                row_num = row_idx + 6
+                row_num = row_idx + 7
                 col_num = df.columns.get_loc(col) + 1
+                cell_coord = f"{get_column_letter(col_num)}{row_num}"
                 cell = ws.cell(row=row_num, column=col_num)
                 comment_text = cell.comment.text if cell.comment else None
 
                 duration = extract_duration(comment_text)
 
                 students.append({"name": name, "duration": duration})
-                st.write(f"{name} → duration: {duration}")
+                comment_dict[name] = {"coord": cell_coord, "comment": comment_text}
+
+                st.write(f"{cell_coord} → {name} → duration: {duration}")
 
             records.append({
                 "구분": category,
