@@ -5,6 +5,7 @@ import pandas as pd
 from datetime import datetime
 from calendar import monthrange
 from pathlib import Path
+from openpyxl import load_workbook
 from attendance_generator import (
     generate_attendance,
     format_text,
@@ -12,8 +13,25 @@ from attendance_generator import (
     clean_name,
 )
 
-st.set_page_config(page_title="출석부 생성기", layout="centered")
+def read_excel_comments(file_path):
+    wb = load_workbook(file_path)
+    ws = wb["ABC"]
+    comments = {}
+    for row in ws.iter_rows():
+        for cell in row:
+            if cell.comment:
+                comments[(cell.row, cell.column)] = cell.comment.text
+    return comments
 
+def extract_duration(text):
+    if not text:
+        return None
+    for line in reversed(text.strip().splitlines()):
+        if any(token in line for token in ['/', '-', '개월']):
+            return line.strip()
+    return None
+
+st.set_page_config(page_title="출석부 생성기", layout="centered")
 st.title("출석부 자동 생성기")
 st.markdown("업무용 시간표 엑셀 파일을 업로드하고 출석부를 생성하세요.")
 st.markdown("출석부 양식 템플릿은 내부에 포함된 `template.xlsx` 파일을 사용합니다.")
@@ -29,22 +47,11 @@ with col2:
 selected_day_type = st.radio("출석 요일 유형 선택", options=["주중", "토요일"], index=0)
 
 with st.expander("사용자 지정 날짜 설정"):
-    st.markdown("- 아래에서 해당 월의 일(day)을 선택하세요.")
-
     _, last_day = monthrange(selected_year, selected_month)
     day_options = [f"{selected_year}-{selected_month:02d}-{d:02d}" for d in range(1, last_day + 1)]
 
-    manual_holiday_strs = st.multiselect(
-        "추가로 제외할 날짜 선택",
-        options=day_options,
-        default=[]
-    )
-
-    manual_include_strs = st.multiselect(
-        "추가로 포함할 날짜 선택",
-        options=day_options,
-        default=[]
-    )
+    manual_holiday_strs = st.multiselect("추가로 제외할 날짜 선택", options=day_options, default=[])
+    manual_include_strs = st.multiselect("추가로 포함할 날짜 선택", options=day_options, default=[])
 
     def parse_dates(date_strs):
         result = []
@@ -64,7 +71,7 @@ if uploaded_file:
         tmp_input_path = tmp_input.name
 
     df = pd.read_excel(tmp_input_path, header=5)
-    df.columns = [str(c).strip() for c in df.columns]  # ← 반드시 먼저 수행
+    df.columns = [str(c).strip() for c in df.columns]
 
     category_col = "구분"
     course_col = "과정"
@@ -96,34 +103,44 @@ if uploaded_file:
         m = selected_month
         target_set = None if not selected_teachers else set(selected_teachers)
 
+        comment_map = read_excel_comments(tmp_input_path)
         records = []
-        for _, row in df.iterrows():
+
+        for row_idx, row in df.iterrows():
             teacher_raw = row.get(teacher_col)
             teacher = capitalize_first_word_if_english(format_text(teacher_raw))
+            if target_set is not None and teacher not in target_set:
+                continue
 
-            if target_set is None or teacher in target_set:
-                category = format_text(row.get(category_col))
-                course = format_text(row.get(course_col))
-                day = format_text(row.get(day_col))
-                time = format_text(row.get(time_col))
+            category = format_text(row.get(category_col))
+            course = format_text(row.get(course_col))
+            day = format_text(row.get(day_col))
+            time = format_text(row.get(time_col))
 
-                students = []
-                for col in student_cols:
-                    name_raw = row[col]
-                    if pd.isna(name_raw):
-                        continue
-                    name = clean_name(format_text(str(name_raw).strip()))
-                    if name:
-                        students.append({"name": name})
+            students = []
+            for i, col in enumerate(student_cols):
+                name_raw = row[col]
+                if pd.isna(name_raw):
+                    continue
+                name = clean_name(format_text(str(name_raw).strip()))
+                if not name:
+                    continue
 
-                records.append({
-                    "구분": category,
-                    "과정": course,
-                    "요일": day,
-                    "시간": time,
-                    "강사": teacher,
-                    "학생목록": students
-                })
+                row_num = row_idx + 6  # header=5 기준
+                col_num = df.columns.get_loc(col) + 1
+                comment_text = comment_map.get((row_num, col_num))
+                duration = extract_duration(comment_text)
+
+                students.append({"name": name, "duration": duration})
+
+            records.append({
+                "구분": category,
+                "과정": course,
+                "요일": day,
+                "시간": time,
+                "강사": teacher,
+                "학생목록": students
+            })
 
         base_dir = os.path.dirname(os.path.abspath(__file__))
         template_path = os.path.join(base_dir, "template.xlsx")

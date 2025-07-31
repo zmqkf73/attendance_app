@@ -199,14 +199,11 @@ def generate_attendance(
                 row_idx = student_start_row + i
                 cell = ws.cell(row=row_idx, column=korean_col)
                 cell.value = name
+                
+                duration = student_dict.get("duration")
+                if duration:
+                    ws.cell(row=row_idx, column=duration_col).value = duration
 
-                key = (row_idx, korean_col)
-                raw_comment = comments_map.get(key)
-                if raw_comment:
-                    for line in reversed(raw_comment.strip().splitlines()):
-                        if any(token in line for token in ['/', '-', '개월']):
-                            ws.cell(row=row_idx, column=duration_col).value = line.strip()
-                            break
 
     for sheetname in wb.sheetnames:
         ws = wb[sheetname]
