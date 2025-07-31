@@ -2,7 +2,7 @@ import re
 import calendar
 import holidays
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, date
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
@@ -55,7 +55,18 @@ def clean_name(name):
     name = remove_all_whitespace(name)
     return name
 
-def generate_attendance(records, template_path, year=None, month=None, day_type="주중"):
+def generate_attendance(
+    records,
+    template_path,
+    year=None,
+    month=None,
+    day_type="주중",
+    manual_holidays=None,
+    manual_includes=None
+):
+    manual_holidays = set(manual_holidays or [])
+    manual_includes = set(manual_includes or [])
+
     TEMPLATE_ROWS = 31
     TEMPLATE_COLS = 32
     used_block_count = {}
@@ -72,13 +83,22 @@ def generate_attendance(records, template_path, year=None, month=None, day_type=
 
     kr_holidays = holidays.KR(years=used_year)
 
+    # 사용자 정의 공휴일 추가
+    for d in manual_holidays:
+        kr_holidays[d] = "사용자 지정 공휴일"
+
+    # 공휴일 예외 처리 (포함할 날짜 제거)
+    for d in manual_includes:
+        if d in kr_holidays:
+            del kr_holidays[d]
+
     valid_dates = []
     for day in range(1, last_day + 1):
-        date = datetime(used_year, used_month, day)
-        weekday = date.weekday()
+        date_obj = datetime(used_year, used_month, day)
+        weekday = date_obj.weekday()
         if ((day_type == "주중" and weekday < 5) or (day_type == "토요일" and weekday == 5)):
-            if date.date() not in kr_holidays:  # 공휴일이면 제외
-                valid_dates.append((days_kor[weekday], day))
+            if date_obj.date() not in kr_holidays:
+                valid_dates.append((days_kor[weekday], date_obj.day))
 
     for record in records:
         teacher = record["강사"]

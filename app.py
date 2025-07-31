@@ -2,7 +2,7 @@ import streamlit as st
 import tempfile
 import os
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 from attendance_generator import generate_attendance, format_text, capitalize_first_word_if_english, clean_name
 
 st.set_page_config(page_title="출석부 생성기", layout="centered")
@@ -20,6 +20,34 @@ with col2:
     selected_month = st.selectbox("월", options=["선택 안 함"] + list(range(1, 13)), index=0)
 
 selected_day_type = st.radio("출석 요일 유형 선택", options=["주중", "토요일"], index=0)
+
+# 사용자 지정 공휴일 및 포함일 입력
+with st.expander("사용자 지정 날짜 설정"):
+    st.markdown("- 날짜는 형식 `YYYY-MM-DD`로 입력하세요.")
+
+    manual_holiday_strs = st.multiselect(
+        "추가로 제외할 날짜 선택",
+        options=[],
+        default=[]
+    )
+
+    manual_include_strs = st.multiselect(
+        "추가로 포함할 날짜 선택",
+        options=[],
+        default=[]
+    )
+
+    def parse_dates(date_strs):
+        result = []
+        for s in date_strs:
+            try:
+                result.append(datetime.strptime(s, "%Y-%m-%d").date())
+            except ValueError:
+                continue
+        return result
+
+    manual_holidays = parse_dates(manual_holiday_strs)
+    manual_includes = parse_dates(manual_include_strs)
 
 if uploaded_file:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_input:
@@ -92,7 +120,16 @@ if uploaded_file:
         template_path = os.path.join(os.path.dirname(__file__), "template.xlsx")
 
         with st.spinner("출석부 생성 중..."):
-            output_stream = generate_attendance(records, template_path, year=y, month=m, day_type=selected_day_type)
+            output_stream = generate_attendance(
+                records,
+                template_path,
+                year=y,
+                month=m,
+                day_type=selected_day_type,
+                manual_holidays=manual_holidays,
+                manual_includes=manual_includes
+            )
+
 
         filename = f"{y or datetime.today().year}년_{m or datetime.today().month:02d}월_출석부.xlsx"
         st.success("출석부 생성이 완료되었습니다.")
