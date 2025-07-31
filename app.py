@@ -3,7 +3,13 @@ import tempfile
 import os
 import pandas as pd
 from datetime import datetime, date
-from attendance_generator import generate_attendance, format_text, capitalize_first_word_if_english, clean_name
+from calendar import monthrange
+from attendance_generator import (
+    generate_attendance,
+    format_text,
+    capitalize_first_word_if_english,
+    clean_name,
+)
 
 st.set_page_config(page_title="출석부 생성기", layout="centered")
 
@@ -15,25 +21,28 @@ uploaded_file = st.file_uploader("시간표 엑셀 파일 업로드", type=["xls
 
 col1, col2 = st.columns(2)
 with col1:
-    selected_year = st.selectbox("년도", options=["선택 안 함"] + list(range(2024, 2031)), index=0)
+    selected_year = st.selectbox("년도", options=list(range(2024, 2031)))
 with col2:
-    selected_month = st.selectbox("월", options=["선택 안 함"] + list(range(1, 13)), index=0)
+    selected_month = st.selectbox("월", options=list(range(1, 13)))
 
 selected_day_type = st.radio("출석 요일 유형 선택", options=["주중", "토요일"], index=0)
 
 # 사용자 지정 공휴일 및 포함일 입력
 with st.expander("사용자 지정 날짜 설정"):
-    st.markdown("- 날짜는 형식 `YYYY-MM-DD`로 입력하세요.")
+    st.markdown("- 아래에서 해당 월의 일(day)을 선택하세요.")
+
+    _, last_day = monthrange(selected_year, selected_month)
+    day_options = [f"{selected_year}-{selected_month:02d}-{d:02d}" for d in range(1, last_day + 1)]
 
     manual_holiday_strs = st.multiselect(
         "추가로 제외할 날짜 선택",
-        options=[],
+        options=day_options,
         default=[]
     )
 
     manual_include_strs = st.multiselect(
         "추가로 포함할 날짜 선택",
-        options=[],
+        options=day_options,
         default=[]
     )
 
@@ -83,8 +92,8 @@ if uploaded_file:
     generate = st.button("출석부 생성")
 
     if generate:
-        y = int(selected_year) if selected_year != "선택 안 함" else None
-        m = int(selected_month) if selected_month != "선택 안 함" else None
+        y = selected_year
+        m = selected_month
         target_set = None if not selected_teachers else set(selected_teachers)
 
         records = []
@@ -97,7 +106,7 @@ if uploaded_file:
                 course = format_text(row.get(course_col))
                 day = format_text(row.get(day_col))
                 time = format_text(row.get(time_col))
-                
+
                 students = (
                     row[student_cols]
                     .dropna()
@@ -130,8 +139,7 @@ if uploaded_file:
                 manual_includes=manual_includes
             )
 
-
-        filename = f"{y or datetime.today().year}년_{m or datetime.today().month:02d}월_출석부.xlsx"
+        filename = f"{y}년_{m:02d}월_출석부.xlsx"
         st.success("출석부 생성이 완료되었습니다.")
         st.download_button(
             "출석부 다운로드",
