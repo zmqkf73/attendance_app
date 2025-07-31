@@ -80,7 +80,7 @@ def generate_attendance(
     TEMPLATE_COLS = 32
     used_block_count = {}
 
-    wb = load_workbook(template_path, data_only=False, keep_links=False, keep_comments=True)
+    wb = load_workbook(template_path if isinstance(template_path, str) else template_path.name)
     template_ws = wb["ABC"]
 
     today = datetime.today()
@@ -175,6 +175,7 @@ def generate_attendance(
                 name = student_dict.get("name")
                 row_idx = student_start_row + i
                 cell = ws.cell(row=row_idx, column=korean_col)
+                cell.value = name
 
                 if cell.comment and cell.comment.text:
                     lines = cell.comment.text.strip().splitlines()
@@ -182,8 +183,6 @@ def generate_attendance(
                         if any(token in line for token in ["/", "-", "개월"]):
                             ws.cell(row=row_idx, column=duration_col).value = line.strip()
                             break
-
-                cell.value = name
 
     for sheetname in wb.sheetnames:
         ws = wb[sheetname]
