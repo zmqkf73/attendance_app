@@ -147,6 +147,17 @@ if uploaded_file:
         if not Path(template_path).exists():
             raise FileNotFoundError(f"template.xlsx not found at {template_path}")
 
+        # 수강기간 출력
+        st.subheader("수강기간 확인")
+        for record in records:
+            for student in record["학생목록"]:
+                name = student.get("name", "")
+                duration = student.get("duration", "")
+                if duration:
+                    st.write(f"{name} - 수강기간: {duration}")
+                else:
+                    st.write(f"{name} - 수강기간: 없음")
+
         with st.spinner("출석부 생성 중..."):
             output_stream = generate_attendance(
                 records,

@@ -185,14 +185,7 @@ def generate_attendance(
                 break
 
         if korean_col:
-            duration_col = None
-            for row in ws.iter_rows(min_row=start_row, max_row=start_row + 10, max_col=TEMPLATE_COLS):
-                for cell in row:
-                    if isinstance(cell.value, str) and cell.value.strip() == "수강기간":
-                        duration_col = cell.column
-                        break
-                if duration_col:
-                    break
+            duration_col = korean_col + 3  # "Korean" 열 기준 3칸 오른쪽
             for i, student_dict in enumerate(students):
                 name = student_dict.get("name")
                 if not name:
@@ -200,10 +193,11 @@ def generate_attendance(
                 row_idx = student_start_row + i
                 cell = ws.cell(row=row_idx, column=korean_col)
                 cell.value = name
-                
+
                 duration = student_dict.get("duration")
                 if duration:
                     ws.cell(row=row_idx, column=duration_col).value = duration
+
 
 
     for sheetname in wb.sheetnames:
