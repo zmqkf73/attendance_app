@@ -15,7 +15,7 @@ from attendance_generator import (
 
 def read_excel_comments(file_path):
     wb = load_workbook(file_path)
-    ws = wb["ABC"]
+    ws = wb.worksheets[0]
     comments = {}
     for row in ws.iter_rows():
         for cell in row:
