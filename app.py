@@ -129,8 +129,8 @@ if uploaded_file:
                 row_num = row_idx + 6  # header=5 기준
                 col_num = df.columns.get_loc(col) + 1
                 comment_text = comment_map.get((row_num, col_num))
+                st.write(f"@@@@@ comment_text: {comment_text}")
                 duration = extract_duration(comment_text)
-                st.write(f"@@@ 수강기간: {duration}")
 
                 students.append({"name": name, "duration": duration})
 
