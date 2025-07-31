@@ -130,9 +130,6 @@ if uploaded_file:
         if not Path(template_path).exists():
             raise FileNotFoundError(f"template.xlsx not found at {template_path}")
 
-        st.write("template_path:", template_path)
-        st.write("File exists:", os.path.exists(template_path))
-
         with st.spinner("출석부 생성 중..."):
             output_stream = generate_attendance(
                 records,

@@ -81,7 +81,7 @@ def generate_attendance(
     TEMPLATE_COLS = 32
     used_block_count = {}
 
-    wb = load_workbook(str(template_path), data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
+    wb = load_workbook(str(template_path), data_only=False, keep_links=False, keep_vba=False)
 
     template_ws = wb["ABC"]
 
