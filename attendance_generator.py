@@ -81,16 +81,7 @@ def generate_attendance(
     TEMPLATE_COLS = 32
     used_block_count = {}
 
-    if isinstance(template_path, (str, Path)):
-        wb = load_workbook(str(template_path), data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
-    elif hasattr(template_path, "read"):
-        template_path.seek(0)
-        wb = load_workbook(template_path, data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
-    elif hasattr(template_path, "name") and isinstance(template_path.name, str):
-        wb = load_workbook(template_path.name, data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
-    else:
-        raise TypeError(f"Invalid template_path: got {type(template_path)}")
-
+    wb = load_workbook(str(template_path), data_only=False, keep_links=False, keep_vba=False)
     template_ws = wb["ABC"]
 
     today = datetime.today()
