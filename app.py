@@ -125,8 +125,9 @@ if uploaded_file:
                     "학생목록": students
                 })
 
-        template_path = Path(__file__).parent / "template.xlsx"
-        if not template_path.exists():
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        template_path = os.path.join(base_dir, "template.xlsx")
+        if not Path(template_path).exists():
             raise FileNotFoundError(f"template.xlsx not found at {template_path}")
 
         with st.spinner("출석부 생성 중..."):
