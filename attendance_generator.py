@@ -6,6 +6,16 @@ from datetime import datetime, date
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
+
+def extract_duration_from_comment(cell):
+    if cell.comment is None:
+        return None
+    lines = cell.comment.text.strip().splitlines()
+    for line in reversed(lines):
+        if any(token in line for token in ['/', '-', '개월']):
+            return line.strip()
+    return None
+
 def convert_non_string_to_string(x):
     return str(x) if not isinstance(x, str) else x
 
@@ -83,11 +93,9 @@ def generate_attendance(
 
     kr_holidays = holidays.KR(years=used_year)
 
-    # 사용자 정의 공휴일 추가
     for d in manual_holidays:
         kr_holidays[d] = "사용자 지정 공휴일"
 
-    # 공휴일 예외 처리 (포함할 날짜 제거)
     for d in manual_includes:
         if d in kr_holidays:
             del kr_holidays[d]
@@ -164,13 +172,13 @@ def generate_attendance(
                 break
 
         if korean_col:
-            duration_col = korean_col + 2  # "학생연락처" 다음 열
+            duration_col = korean_col + 3
             for i, name in enumerate(students):
                 row_idx = student_start_row + i
                 name_cell = ws.cell(row=row_idx, column=korean_col)
-                name_cell.value = name
+                name_cell.value = clean_name(str(name).strip())
 
-                # 메모에서 수강기간 추출하여 수강기간 셀에 기록
+                # 메모에서 수강기간 추출
                 if name_cell.comment and name_cell.comment.text:
                     lines = name_cell.comment.text.strip().splitlines()
                     for line in reversed(lines):
