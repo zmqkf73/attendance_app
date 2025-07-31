@@ -80,7 +80,13 @@ def generate_attendance(
     TEMPLATE_COLS = 32
     used_block_count = {}
 
-    wb = load_workbook(template_path if isinstance(template_path, str) else template_path.name, data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
+    if isinstance(template_path, str):
+        wb = load_workbook(template_path, data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
+    elif hasattr(template_path, 'read'):
+        wb = load_workbook(template_path, data_only=False, keep_links=False, keep_vba=False, keep_comments=True)
+    else:
+        raise TypeError("template_path must be a file path or a file-like object")
+
     template_ws = wb["ABC"]
 
     today = datetime.today()
