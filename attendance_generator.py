@@ -137,7 +137,7 @@ def generate_attendance(
         if teacher in wb.sheetnames:
             ws = wb[teacher]
         else:
-            ws = wb.copy_worksheet(template_ws)
+            ws = wb.copy_worksheet(wb.worksheets[0])
             ws.title = teacher
             used_block_count[teacher] = 0
 
