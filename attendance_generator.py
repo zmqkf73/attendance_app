@@ -7,9 +7,11 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font
 from pathlib import Path
 
-def read_excel_comments(filename):
-    wb = load_workbook(filename)
-    ws = wb["ABC"]
+def read_excel_comments(file_path):
+    wb = load_workbook(file_path)
+    sheetname = "ABC" if "ABC" in wb.sheetnames else wb.sheetnames[0]
+    ws = wb[sheetname]
+
     comments = {}
     for row in ws.iter_rows():
         for cell in row:
