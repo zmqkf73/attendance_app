@@ -12,6 +12,7 @@ from attendance_generator import (
     capitalize_first_word_if_english,
     clean_name,
 )
+from openpyxl.utils import get_column_letter
 
 def read_excel_comments(file_path):
     wb = load_workbook(file_path)
@@ -20,7 +21,7 @@ def read_excel_comments(file_path):
     for row in ws.iter_rows():
         for cell in row:
             if cell.comment:
-                comments[(cell.row, cell.column)] = cell.comment.text
+                comments[cell.coordinate] = cell.comment.text
     return comments
 
 def extract_duration(text):
@@ -126,9 +127,11 @@ if uploaded_file:
                 if not name:
                     continue
 
-                row_num = row_idx + 6  # header=5 기준
+                row_num = row_idx + 6
                 col_num = df.columns.get_loc(col) + 1
-                comment_text = comment_map.get((row_num, col_num))
+                col_letter = get_column_letter(col_num)
+                cell_coord = f"{col_letter}{row_num}"
+                comment_text = comment_map.get(cell_coord)
 
                 duration = None
                 if comment_text:

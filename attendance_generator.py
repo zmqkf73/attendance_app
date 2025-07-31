@@ -7,16 +7,6 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font
 from pathlib import Path
 
-def read_excel_comments(file_path):
-    wb = load_workbook(file_path)
-    ws = wb.worksheets[0]  # 첫 번째 시트 사용 (이름 무관)
-
-    comments = {}
-    for row in ws.iter_rows():
-        for cell in row:
-            if cell.comment:
-                comments[(cell.row, cell.column)] = cell.comment.text
-    return comments
 
 def extract_duration_from_comment(cell):
     if cell.comment is None:
@@ -93,8 +83,6 @@ def generate_attendance(
     used_block_count = {}
 
     wb = load_workbook(str(template_path), data_only=False, keep_links=False, keep_vba=False)
-
-    comments_map = read_excel_comments(str(template_path))
 
     ws = wb.worksheets[0]
 
