@@ -116,6 +116,11 @@ if uploaded_file:
                 if pd.isna(name_raw):
                     continue
                 name = clean_name(format_text(str(name_raw).strip()))
+                from openpyxl.utils import get_column_letter
+                row_num = row_idx + 6  # 실제 엑셀 행 번호
+                col_num = df.columns.get_loc(col) + 1  # 실제 엑셀 열 번호 (1-based)
+                cell_coord = f"{get_column_letter(col_num)}{row_num}"
+                st.write(f"{cell_coord} → {name} → duration: {duration}")
                 if not name:
                     continue
 
