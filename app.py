@@ -64,6 +64,7 @@ if uploaded_file:
         tmp_input_path = tmp_input.name
 
     df = pd.read_excel(tmp_input_path, header=5)
+    df.columns = [str(c).strip() for c in df.columns]  # ← 반드시 먼저 수행
 
     category_col = "구분"
     course_col = "과정"
@@ -73,7 +74,6 @@ if uploaded_file:
     material_col = "교재"
     student_end_col = "총인원"
 
-    df.columns = [str(c).strip() for c in df.columns]
     df[category_col] = df[category_col].fillna(method="ffill")
     st.write("df.columns:", list(df.columns))
 
