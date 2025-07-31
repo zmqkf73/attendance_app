@@ -131,8 +131,6 @@ if uploaded_file:
                 students.append({"name": name, "duration": duration})
                 comment_dict[name] = {"coord": cell_coord, "comment": comment_text}
 
-                st.write(f"{cell_coord} → {name} → duration: {duration}")
-
             records.append({
                 "구분": category,
                 "과정": course,

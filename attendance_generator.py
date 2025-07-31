@@ -66,6 +66,16 @@ def clean_name(name):
     name = remove_all_whitespace(name)
     return name
 
+def preprocess_duration(text):
+    if not text:
+        return None
+    text = strip_edges(text)
+    text = reduce_whitespace(text)
+    text = replace_tilde_with_dash(text)
+    text = insert_space_before_brackets(text)
+    text = insert_space_between_adjacent_brackets(text)
+    return text
+
 def generate_attendance(
     records,
     template_path,
@@ -179,14 +189,15 @@ def generate_attendance(
                 if not name:
                     continue
                 row_idx = student_start_row + i
-                cell = ws.cell(row=row_idx, column=korean_col)
-                cell.value = name
+                name_cell = ws.cell(row=row_idx, column=korean_col)
+                name_cell.value = name
 
                 duration = student_dict.get("duration")
                 if duration:
-                    ws.cell(row=row_idx, column=duration_col).value = duration
-
-
+                    duration = preprocess_duration(duration)
+                    duration_cell = ws.cell(row=row_idx, column=duration_col)
+                    duration_cell.value = duration
+                    duration_cell.font = Font(size=8)
 
     for sheetname in wb.sheetnames:
         ws = wb[sheetname]
