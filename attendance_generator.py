@@ -164,8 +164,19 @@ def generate_attendance(
                 break
 
         if korean_col:
+            duration_col = korean_col + 2  # "학생연락처" 다음 열
             for i, name in enumerate(students):
-                ws.cell(row=student_start_row + i, column=korean_col, value=name)
+                row_idx = student_start_row + i
+                name_cell = ws.cell(row=row_idx, column=korean_col)
+                name_cell.value = name
+
+                # 메모에서 수강기간 추출하여 수강기간 셀에 기록
+                if name_cell.comment and name_cell.comment.text:
+                    lines = name_cell.comment.text.strip().splitlines()
+                    for line in reversed(lines):
+                        if any(token in line for token in ["/", "-", "개월"]):
+                            ws.cell(row=row_idx, column=duration_col).value = line.strip()
+                            break
 
     for sheetname in wb.sheetnames:
         ws = wb[sheetname]
