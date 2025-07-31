@@ -14,21 +14,11 @@ from attendance_generator import (
 )
 from openpyxl.utils import get_column_letter
 
-def read_excel_comments(file_path):
-    wb = load_workbook(file_path)
-    ws = wb.worksheets[0]
-    comments = {}
-    for row in ws.iter_rows():
-        for cell in row:
-            if cell.comment:
-                comments[cell.coordinate] = cell.comment.text
-    return comments
-
 def extract_duration(text):
     if not text:
         return None
     for line in reversed(text.strip().splitlines()):
-        if any(token in line for token in ['/', '-', '개월']):
+        if any(t in line for t in ['/', '-', '개월']):
             return line.strip()
     return None
 
@@ -71,6 +61,9 @@ if uploaded_file:
         tmp_input.write(uploaded_file.read())
         tmp_input_path = tmp_input.name
 
+    wb = load_workbook(tmp_input_path)
+    ws = wb.worksheets[0]
+
     df = pd.read_excel(tmp_input_path, header=5)
     df.columns = [str(c).strip() for c in df.columns]
 
@@ -104,7 +97,6 @@ if uploaded_file:
         m = selected_month
         target_set = None if not selected_teachers else set(selected_teachers)
 
-        comment_map = read_excel_comments(tmp_input_path)
         records = []
 
         for row_idx, row in df.iterrows():
@@ -128,18 +120,11 @@ if uploaded_file:
                     continue
 
                 row_num = row_idx + 6
-                st.write(f"row_idx: {row_idx}")
                 col_num = df.columns.get_loc(col) + 1
-                col_letter = get_column_letter(col_num)
-                cell_coord = f"{col_letter}{row_num}"
-                comment_text = comment_map.get(cell_coord)
+                cell = ws.cell(row=row_num, column=col_num)
+                comment_text = cell.comment.text if cell.comment else None
 
-                duration = None
-                if comment_text:
-                    for line in reversed(comment_text.strip().splitlines()):
-                        if any(t in line for t in ['/', '-', '개월']):
-                            duration = line.strip()
-                            break
+                duration = extract_duration(comment_text)
 
                 students.append({"name": name, "duration": duration})
                 st.write(f"{name} → duration: {duration}")
