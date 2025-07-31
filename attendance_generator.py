@@ -7,6 +7,16 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font
 from pathlib import Path
 
+def read_excel_comments(filename):
+    wb = load_workbook(filename)
+    ws = wb["ABC"]
+    comments = {}
+    for row in ws.iter_rows():
+        for cell in row:
+            if cell.comment:
+                comments[(cell.row, cell.column)] = cell.comment.text
+    return comments
+
 def extract_duration_from_comment(cell):
     if cell.comment is None:
         return None
@@ -82,6 +92,8 @@ def generate_attendance(
     used_block_count = {}
 
     wb = load_workbook(str(template_path), data_only=False, keep_links=False, keep_vba=False)
+
+    comments_map = read_excel_comments(str(template_path))
 
     template_ws = wb["ABC"]
 
@@ -188,9 +200,13 @@ def generate_attendance(
                 cell = ws.cell(row=row_idx, column=korean_col)
                 cell.value = name
 
-                duration = extract_duration_from_comment(cell)
-                if duration:
-                    ws.cell(row=row_idx, column=duration_col).value = duration
+                key = (row_idx, korean_col)
+                raw_comment = comments_map.get(key)
+                if raw_comment:
+                    for line in reversed(raw_comment.strip().splitlines()):
+                        if any(token in line for token in ['/', '-', '개월']):
+                            ws.cell(row=row_idx, column=duration_col).value = line.strip()
+                            break
 
     for sheetname in wb.sheetnames:
         ws = wb[sheetname]

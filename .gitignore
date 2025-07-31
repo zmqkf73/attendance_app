@@ -1,0 +1,22 @@
+# 임시 엑셀 파일 제외
+tmp.xlsx
+example.ipynb
+
+# Python 관련 무시 항목
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+.env
+.venv
+env/
+venv/
+*.log
+
+# Jupyter Notebook 체크포인트
+.ipynb_checkpoints/
+
+# macOS, Windows, Linux 시스템 파일
+.DS_Store
+Thumbs.db
