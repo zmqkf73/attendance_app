@@ -130,6 +130,7 @@ if uploaded_file:
                 col_num = df.columns.get_loc(col) + 1
                 comment_text = comment_map.get((row_num, col_num))
                 duration = extract_duration(comment_text)
+                st.write(f"@@@ 수강기간: {duration}")
 
                 students.append({"name": name, "duration": duration})
 
