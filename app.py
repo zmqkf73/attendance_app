@@ -4,6 +4,7 @@ import os
 import pandas as pd
 from datetime import datetime
 from calendar import monthrange
+from pathlib import Path
 from attendance_generator import (
     generate_attendance,
     format_text,
@@ -124,12 +125,14 @@ if uploaded_file:
                     "학생목록": students
                 })
 
-        template_path = os.path.join(os.path.dirname(__file__), "template.xlsx")
+        template_path = Path(__file__).parent / "template.xlsx"
+        if not template_path.exists():
+            raise FileNotFoundError(f"template.xlsx not found at {template_path}")
 
         with st.spinner("출석부 생성 중..."):
             output_stream = generate_attendance(
                 records,
-                template_path,
+                template_path=template_path,
                 year=y,
                 month=m,
                 day_type=selected_day_type,
