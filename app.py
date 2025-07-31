@@ -12,6 +12,9 @@ from attendance_generator import (
     clean_name,
 )
 
+import openpyxl
+st.write("openpyxl version:", openpyxl.__version__)
+
 st.set_page_config(page_title="출석부 생성기", layout="centered")
 
 st.title("출석부 자동 생성기")
