@@ -75,6 +75,7 @@ if uploaded_file:
 
     df.columns = [str(c).strip() for c in df.columns]
     df[category_col] = df[category_col].fillna(method="ffill")
+    st.write("df.columns:", list(df.columns))
 
     start_index = df.columns.get_loc(material_col) + 1
     end_index = df.columns.get_loc(student_end_col)
