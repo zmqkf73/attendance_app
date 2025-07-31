@@ -69,7 +69,16 @@ if uploaded_file:
                 course = format_text(row.get(course_col))
                 day = format_text(row.get(day_col))
                 time = format_text(row.get(time_col))
-                students = row[student_cols].dropna().astype(str).apply(clean_name).tolist()
+                
+                students = (
+                    row[student_cols]
+                    .dropna()
+                    .astype(str)
+                    .map(format_text)
+                    .map(clean_name)
+                    .map(str.strip)
+                )
+                students = [s for s in students if s]
 
                 records.append({
                     "구분": category,
