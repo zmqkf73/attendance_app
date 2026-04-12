@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 from calendar import monthrange
 from datetime import datetime
@@ -8,7 +9,7 @@ import pandas as pd
 import streamlit as st
 
 from attendance_generator import generate_attendance
-from attendance_parser import SHEET_CONFIGS, parse_language_records
+from attendance_parser import SHEET_CONFIGS, normalize_teacher_name, parse_language_records
 
 
 def _find_column(columns, keywords, exclude=()):
@@ -18,6 +19,25 @@ def _find_column(columns, keywords, exclude=()):
             if not any(ex.lower() in label.lower() for ex in exclude):
                 return column
     return None
+
+
+def _clean_teacher_option(value):
+    if value is None:
+        return None
+
+    teacher = normalize_teacher_name(str(value)).strip()
+    if not teacher or teacher.lower() == "nan" or teacher == "강사":
+        return None
+    if teacher.lower() in {"select all", "all", "전체", "전체선택", "전체 선택"}:
+        return None
+    if teacher.startswith("※"):
+        return None
+    if re.search(r"\d", teacher):
+        return None
+    if any(keyword in teacher for keyword in ("수업", "예정", "시험", "대비반", "신규", "변경")):
+        return None
+
+    return teacher
 
 
 def load_teacher_options(workbook_path):
@@ -51,9 +71,9 @@ def load_teacher_options(workbook_path):
             .tolist()
         )
         teacher_names.update(
-            value
-            for value in values
-            if value and value.lower() != "nan" and value != "강사"
+            teacher
+            for teacher in (_clean_teacher_option(value) for value in values)
+            if teacher
         )
 
     return sorted(teacher_names)
@@ -108,6 +128,7 @@ if uploaded_file:
             selected_teachers = st.multiselect(
                 "출석부를 생성할 강사를 선택하세요 (선택 없으면 전체 생성)",
                 all_teachers,
+                placeholder="선택하지 않으면 전체 강사 출석부를 생성합니다.",
             )
 
             generate = st.button("출석부 생성")
