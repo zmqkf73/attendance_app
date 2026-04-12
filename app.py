@@ -6,24 +6,57 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
-from openpyxl import load_workbook
-from openpyxl.utils import get_column_letter
 
-from attendance_generator import (
-    capitalize_first_word_if_english,
-    clean_name,
-    format_text,
-    generate_attendance,
-)
+from attendance_generator import generate_attendance
+from attendance_parser import SHEET_CONFIGS, parse_language_records
 
 
-def extract_duration(text):
-    if not text:
-        return None
-    for line in reversed(text.strip().splitlines()):
-        if any(t in line for t in ["/", "-", "개월"]):
-            return line.strip()
+def _find_column(columns, keywords, exclude=()):
+    for column in columns:
+        label = str(column).strip()
+        if any(keyword.lower() in label.lower() for keyword in keywords):
+            if not any(ex.lower() in label.lower() for ex in exclude):
+                return column
     return None
+
+
+def load_teacher_options(workbook_path):
+    teacher_names = set()
+
+    for sheet_name, header_row, _, _ in SHEET_CONFIGS:
+        try:
+            df = pd.read_excel(
+                workbook_path,
+                sheet_name=sheet_name,
+                header=header_row - 1,
+                engine="openpyxl",
+            )
+        except Exception:
+            continue
+
+        df.columns = [
+            column if isinstance(column, (int, float)) else str(column).strip()
+            for column in df.columns
+        ]
+
+        teacher_col = _find_column(df.columns, ["강사"], exclude=["인원", "보"])
+        if teacher_col is None:
+            continue
+
+        values = (
+            df[teacher_col]
+            .fillna("")
+            .astype(str)
+            .map(str.strip)
+            .tolist()
+        )
+        teacher_names.update(
+            value
+            for value in values
+            if value and value.lower() != "nan" and value != "강사"
+        )
+
+    return sorted(teacher_names)
 
 
 st.set_page_config(page_title="출석부 생성기", layout="centered")
@@ -66,115 +99,52 @@ if uploaded_file:
         tmp_input_path = tmp_input.name
 
     try:
-        with st.spinner("업로드 파일을 읽는 중..."):
-            df = pd.read_excel(tmp_input_path, header=5)
-            df.columns = [str(c).strip() for c in df.columns]
+        with st.spinner("강사 목록을 불러오는 중..."):
+            all_teachers = load_teacher_options(tmp_input_path)
 
-            category_col = "구분"
-            course_col = "과정"
-            day_col = "요일"
-            time_col = "시간"
-            teacher_col = "강사"
-            material_col = "교재"
-            student_end_col = "총인원"
-
-            df[category_col] = df[category_col].fillna(method="ffill")
-
-            start_index = df.columns.get_loc(material_col) + 1
-            end_index = df.columns.get_loc(student_end_col)
-            student_cols = df.columns[start_index:end_index]
-
-            df[teacher_col] = df[teacher_col].fillna("").astype(str).map(str.strip)
-            all_teachers = sorted(
-                set(
-                    capitalize_first_word_if_english(format_text(t))
-                    for t in df[teacher_col].unique()
-                    if t and t.lower() != "nan" and t != "강사"
-                )
+        if not all_teachers:
+            st.error("강사 목록을 찾지 못했습니다. 업로드한 파일 형식을 확인해주세요.")
+        else:
+            selected_teachers = st.multiselect(
+                "출석부를 생성할 강사를 선택하세요 (선택 없으면 전체 생성)",
+                all_teachers,
             )
 
-        selected_teachers = st.multiselect(
-            "출석부를 생성할 강사를 선택하세요 (선택 없으면 전체 생성)",
-            all_teachers,
-        )
+            generate = st.button("출석부 생성")
 
-        generate = st.button("출석부 생성")
+            if generate:
+                with st.spinner("출석부 생성 중..."):
+                    records = parse_language_records(tmp_input_path)
 
-        if generate:
-            with st.spinner("출석부 생성 중..."):
-                wb = load_workbook(tmp_input_path)
-                ws = wb.worksheets[0]
+                    target_set = None if not selected_teachers else set(selected_teachers)
+                    filtered_records = [
+                        record for record in records
+                        if target_set is None or record["강사"] in target_set
+                    ]
 
-                y = selected_year
-                m = selected_month
-                target_set = None if not selected_teachers else set(selected_teachers)
+                    base_dir = os.path.dirname(os.path.abspath(__file__))
+                    template_path = os.path.join(base_dir, "template.xlsx")
+                    if not Path(template_path).exists():
+                        raise FileNotFoundError(f"template.xlsx not found at {template_path}")
 
-                records = []
-
-                for row_idx, row in df.iterrows():
-                    teacher_raw = row.get(teacher_col)
-                    teacher = capitalize_first_word_if_english(format_text(teacher_raw))
-                    if target_set is not None and teacher not in target_set:
-                        continue
-
-                    category = format_text(row.get(category_col))
-                    course = format_text(row.get(course_col))
-                    day = format_text(row.get(day_col))
-                    time = format_text(row.get(time_col))
-
-                    students = []
-                    for col in student_cols:
-                        name_raw = row[col]
-                        if pd.isna(name_raw):
-                            continue
-                        name = clean_name(format_text(str(name_raw).strip()))
-                        if not name:
-                            continue
-
-                        row_num = row_idx + 7
-                        col_num = df.columns.get_loc(col) + 1
-                        cell_coord = f"{get_column_letter(col_num)}{row_num}"
-                        cell = ws.cell(row=row_num, column=col_num)
-                        comment_text = cell.comment.text if cell.comment else None
-
-                        duration = extract_duration(comment_text)
-
-                        students.append({"name": name, "duration": duration})
-
-                    records.append(
-                        {
-                            "구분": category,
-                            "과정": course,
-                            "요일": day,
-                            "시간": time,
-                            "강사": teacher,
-                            "학생목록": students,
-                        }
+                    output_stream = generate_attendance(
+                        filtered_records,
+                        template_path=template_path,
+                        year=selected_year,
+                        month=selected_month,
+                        day_type=selected_day_type,
+                        manual_holidays=manual_holidays,
+                        manual_includes=manual_includes,
                     )
 
-                base_dir = os.path.dirname(os.path.abspath(__file__))
-                template_path = os.path.join(base_dir, "template.xlsx")
-                if not Path(template_path).exists():
-                    raise FileNotFoundError(f"template.xlsx not found at {template_path}")
-
-                output_stream = generate_attendance(
-                    records,
-                    template_path=template_path,
-                    year=y,
-                    month=m,
-                    day_type=selected_day_type,
-                    manual_holidays=manual_holidays,
-                    manual_includes=manual_includes,
+                filename = f"{selected_year}년_{selected_month:02d}월_출석부.xlsx"
+                st.success("출석부 생성이 완료되었습니다.")
+                st.download_button(
+                    "출석부 다운로드",
+                    data=output_stream.getvalue(),
+                    file_name=filename,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
-
-            filename = f"{y}년_{m:02d}월_출석부.xlsx"
-            st.success("출석부 생성이 완료되었습니다.")
-            st.download_button(
-                "출석부 다운로드",
-                data=output_stream.getvalue(),
-                file_name=filename,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
     finally:
         try:
             os.unlink(tmp_input_path)
