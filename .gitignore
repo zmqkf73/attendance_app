@@ -1,22 +1,28 @@
-# 임시 엑셀 파일 제외
-tmp.xlsx
-example.ipynb
+# Local Excel inputs / outputs
+output/
+~$*.xlsx
+*시간표 학생명단.xlsx
+*_check.xlsx
+*_test.xlsx
 
-# Python 관련 무시 항목
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.swp
+*.log
 .env
-.venv
+.venv/
 env/
 venv/
-*.log
 
-# Jupyter Notebook 체크포인트
+# Notebook / editor
 .ipynb_checkpoints/
+.claude/
 
-# macOS, Windows, Linux 시스템 파일
+# OS files
 .DS_Store
 Thumbs.db
+
+# Keep the tracked template workbook
+!template.xlsx
