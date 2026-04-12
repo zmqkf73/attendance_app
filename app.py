@@ -40,6 +40,16 @@ def _clean_teacher_option(value):
     return teacher
 
 
+def _is_blocked_teacher_option(value):
+    normalized = str(value).strip().casefold().replace(" ", "")
+    return normalized in {
+        "selectall",
+        "all",
+        "전체",
+        "전체선택",
+    }
+
+
 def load_teacher_options(workbook_path):
     teacher_names = set()
 
@@ -76,7 +86,11 @@ def load_teacher_options(workbook_path):
             if teacher
         )
 
-    return sorted(teacher_names)
+    return sorted(
+        teacher
+        for teacher in teacher_names
+        if not _is_blocked_teacher_option(teacher)
+    )
 
 
 st.set_page_config(page_title="출석부 생성기", layout="centered")
