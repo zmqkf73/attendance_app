@@ -140,6 +140,9 @@ def is_summary_row(row, time_value):
 
 def parse_sheet(workbook_path, sheet_name, header_row, day_col_idx=None, preferred_course_col=None):
     workbook = openpyxl.load_workbook(workbook_path, data_only=False)
+    if sheet_name not in workbook.sheetnames:
+        return []
+
     worksheet = workbook[sheet_name]
 
     df = pd.read_excel(
@@ -168,7 +171,7 @@ def parse_sheet(workbook_path, sheet_name, header_row, day_col_idx=None, preferr
     if course_col is None:
         course_col = find(["과정"]) or find(["구분2"]) or find(["구분1"])
 
-    if day_col_idx is not None:
+    if day_col_idx is not None and 0 < day_col_idx <= len(df.columns):
         day_col = df.columns[day_col_idx - 1]
     else:
         day_col = find(["요일"])
@@ -183,7 +186,6 @@ def parse_sheet(workbook_path, sheet_name, header_row, day_col_idx=None, preferr
     }
 
     if not teacher_col:
-        print(f"  ⚠ Sheet {sheet_name}: '강사' 컬럼을 찾을 수 없음")
         return []
 
     records = []
@@ -258,7 +260,12 @@ def parse_sheet(workbook_path, sheet_name, header_row, day_col_idx=None, preferr
 
 def parse_language_records(workbook_path, sheet_configs=None):
     records = []
+    workbook = openpyxl.load_workbook(workbook_path, data_only=False)
+    available_sheets = set(workbook.sheetnames)
+
     for sheet_name, header_row, day_col_idx, preferred_course_col in sheet_configs or SHEET_CONFIGS:
+        if sheet_name not in available_sheets:
+            continue
         records.extend(
             parse_sheet(
                 workbook_path,
