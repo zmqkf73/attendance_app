@@ -143,7 +143,10 @@ def parse_sheet(workbook_path, sheet_name, header_row, day_col_idx=None, preferr
     if sheet_name not in workbook.sheetnames:
         return []
 
-    worksheet = workbook[sheet_name]
+    try:
+        worksheet = workbook[sheet_name]
+    except KeyError:
+        return []
 
     df = pd.read_excel(
         workbook_path,

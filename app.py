@@ -150,12 +150,18 @@ if uploaded_file:
             if generate:
                 with st.spinner("출석부 생성 중..."):
                     records = parse_language_records(tmp_input_path)
+                    if not records:
+                        st.error("출석부를 만들 수 있는 수업 데이터를 찾지 못했습니다. 파일 형식을 확인해주세요.")
+                        st.stop()
 
                     target_set = None if not selected_teachers else set(selected_teachers)
                     filtered_records = [
                         record for record in records
                         if target_set is None or record["강사"] in target_set
                     ]
+                    if not filtered_records:
+                        st.error("선택한 강사에 해당하는 수업 데이터가 없습니다.")
+                        st.stop()
 
                     base_dir = os.path.dirname(os.path.abspath(__file__))
                     template_path = os.path.join(base_dir, "template.xlsx")
