@@ -138,6 +138,30 @@ def is_summary_row(row, time_value):
     return is_empty(time_value) and any(text in SUMMARY_MARKERS for text in texts)
 
 
+def _row_looks_like_header(worksheet, row):
+    if row < 1 or row > worksheet.max_row:
+        return False
+    text_cells = []
+    for col in range(1, worksheet.max_column + 1):
+        value = worksheet.cell(row=row, column=col).value
+        if isinstance(value, str):
+            text_cells.append(value)
+    has_teacher = any("강사" in text for text in text_cells)
+    has_course = any("과정" in text or "구분" in text for text in text_cells)
+    has_time = any("시간" in text or text.strip().lower() == "time" for text in text_cells)
+    return has_teacher and has_course and has_time
+
+
+def _detect_header_row(worksheet, default_row, search_radius=2):
+    candidates = [default_row]
+    for offset in range(1, search_radius + 1):
+        candidates.extend([default_row - offset, default_row + offset])
+    for row in candidates:
+        if _row_looks_like_header(worksheet, row):
+            return row
+    return default_row
+
+
 def parse_sheet(workbook_path, sheet_name, header_row, day_col_idx=None, preferred_course_col=None):
     workbook = openpyxl.load_workbook(workbook_path, data_only=False)
     if sheet_name not in workbook.sheetnames:
@@ -147,6 +171,8 @@ def parse_sheet(workbook_path, sheet_name, header_row, day_col_idx=None, preferr
         worksheet = workbook[sheet_name]
     except KeyError:
         return []
+
+    header_row = _detect_header_row(worksheet, header_row)
 
     df = pd.read_excel(
         workbook_path,
