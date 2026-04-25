@@ -5,92 +5,36 @@ from calendar import monthrange
 from datetime import datetime
 from pathlib import Path
 
-import pandas as pd
 import streamlit as st
 
 from attendance_generator import generate_attendance
-from attendance_parser import SHEET_CONFIGS, normalize_teacher_name, parse_language_records
+from attendance_parser import parse_language_records
 
 
-def _find_column(columns, keywords, exclude=()):
-    for column in columns:
-        label = str(column).strip()
-        if any(keyword.lower() in label.lower() for keyword in keywords):
-            if not any(ex.lower() in label.lower() for ex in exclude):
-                return column
-    return None
-
-
-def _clean_teacher_option(value):
-    if value is None:
-        return None
-
-    teacher = normalize_teacher_name(str(value)).strip()
+def _is_valid_teacher_option(value):
+    if not value:
+        return False
+    teacher = str(value).strip()
     if not teacher or teacher.lower() == "nan" or teacher == "강사":
-        return None
+        return False
     if teacher.lower() in {"select all", "all", "전체", "전체선택", "전체 선택"}:
-        return None
+        return False
     if teacher.startswith("※"):
-        return None
+        return False
     if re.search(r"\d", teacher):
-        return None
+        return False
     if any(keyword in teacher for keyword in ("수업", "예정", "시험", "대비반", "신규", "변경")):
-        return None
-
-    return teacher
-
-
-def _is_blocked_teacher_option(value):
-    normalized = str(value).strip().casefold().replace(" ", "")
-    return normalized in {
-        "selectall",
-        "all",
-        "전체",
-        "전체선택",
-    }
+        return False
+    return True
 
 
 def load_teacher_options(workbook_path):
-    teacher_names = set()
-
-    for sheet_name, header_row, _, _ in SHEET_CONFIGS:
-        try:
-            df = pd.read_excel(
-                workbook_path,
-                sheet_name=sheet_name,
-                header=header_row - 1,
-                engine="openpyxl",
-            )
-        except Exception:
-            continue
-
-        df.columns = [
-            column if isinstance(column, (int, float)) else str(column).strip()
-            for column in df.columns
-        ]
-
-        teacher_col = _find_column(df.columns, ["강사"], exclude=["인원", "보"])
-        if teacher_col is None:
-            continue
-
-        values = (
-            df[teacher_col]
-            .fillna("")
-            .astype(str)
-            .map(str.strip)
-            .tolist()
-        )
-        teacher_names.update(
-            teacher
-            for teacher in (_clean_teacher_option(value) for value in values)
-            if teacher
-        )
-
-    return sorted(
-        teacher
-        for teacher in teacher_names
-        if not _is_blocked_teacher_option(teacher)
-    )
+    teacher_names = {
+        record["강사"]
+        for record in parse_language_records(workbook_path)
+        if record.get("강사")
+    }
+    return sorted(teacher for teacher in teacher_names if _is_valid_teacher_option(teacher))
 
 
 st.set_page_config(page_title="출석부 생성기", layout="centered")
