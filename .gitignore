@@ -2,6 +2,7 @@
 output/
 ~$*.xlsx
 *시간표 학생명단.xlsx
+통합 문서*.xlsx
 *_check.xlsx
 *_test.xlsx
 
